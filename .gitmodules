@@ -1,3 +1,6 @@
 [submodule "src/core/table"]
 	path = src/core/table
 	url = https://github.com/Kolad2/war3-lua-table.git
+[submodule "WarcraftIII-pack"]
+	path = WarcraftIII-pack
+	url = https://github.com/Kolad2/WarcraftIII-pack.git
