@@ -1,0 +1,3 @@
+[submodule "src/core/table"]
+	path = src/core/table
+	url = https://github.com/Kolad2/war3-lua-table.git
