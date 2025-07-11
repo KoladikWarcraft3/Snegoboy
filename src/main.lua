@@ -5,7 +5,12 @@ map = {
 
 function map:main()
     print("Initializing map...")
-    NetFrame:init()
+    -- InputServer:init()
+    Unit:init()
+    PhysicSystem:init()
+    local unit = Unit:create(Player(0),FourCC("hfoo"),0,0)
+    local agent = ControlAgent:create(unit, Player(0))
+    print("Initializing complite.")
 end
 
 local oldInitGlobals = InitGlobals
