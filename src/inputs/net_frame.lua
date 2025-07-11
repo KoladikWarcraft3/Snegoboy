@@ -4,8 +4,11 @@ NetFrame = {}
 function NetFrame._frame_callback()
     local frame_handle = BlzGetTriggerFrame()
     local player = GetTriggerPlayer()
-    print("puk puk")
-    NetFrame.set_mouse_center()
+    local net_frame = NetFrame:get(frame_handle)
+    --print("x:", net_frame.x, "y:", net_frame.y)
+    --NetFrame.set_mouse_center()
+    NetFrame.input_x[GetPlayerId(player) + 1] = net_frame.x
+    NetFrame.input_y[GetPlayerId(player) + 1] = net_frame.y
 end
 
 function NetFrame.set_mouse_center()
@@ -25,7 +28,14 @@ function NetFrame.create(cls, x ,y)
     BlzFrameSetAbsPoint(obj.frame, FRAMEPOINT_CENTER, 0.4 + x, 0.3 + y)
     BlzFrameSetSize(obj.frame, cls.frame_width, cls.frame_height)
     BlzTriggerRegisterFrameEvent(cls.frame_trig, obj.frame, FRAMEEVENT_MOUSE_ENTER)
+    cls.link:set(obj.frame, obj)
     return obj
+end
+
+---@param cls NetFrame
+---@param frame_handle framehandle
+function NetFrame.get(cls, frame_handle)
+    return cls.link:get(frame_handle)
 end
 
 ---@param cls NetFrame
@@ -39,10 +49,12 @@ function NetFrame.create_grid(cls)
     end
 end
 
----@param cls NetFrame
----@param frame_handle framehandle
-function NetFrame.get(cls, frame_handle)
-    return self.link:get(frame_handle)
+function NetFrame.get_input_x(cls, player)
+    return cls.input_x[GetPlayerId(player) + 1] or 0
+end
+
+function NetFrame.get_input_y(cls, player)
+    return cls.input_y[GetPlayerId(player) + 1] or 0
 end
 
 ---@param cls NetFrame
@@ -52,6 +64,8 @@ function NetFrame.init(cls)
     cls.timer_mouse_center = CreateTimer()
     cls.frame_trig = CreateTrigger()
     cls.link = dict()
+    cls.input_x = {}
+    cls.input_y = {}
     TriggerAddAction( cls.frame_trig, cls._frame_callback)
     cls:create_grid()
     -- TimerStart(cls.timer_mouse_center, 0.1, true, cls.set_mouse_center)
