@@ -35,7 +35,9 @@ function map:main()
     Unit:init()
     PhysicSystem:init()
     local unit = Unit:create(Player(0),FourCC("hfoo"),0,0)
+    InputServer:init()
     local agent = ControlAgent:create(unit, Player(0))
+
     print("Initializing complite.")
 end
 
@@ -1938,10 +1940,95 @@ function InputServer:get_mouse_vy(player)
     return NetFrame:get_input_y(player)
 end
 
-function InputServer:init()
-    NetFrame:init()
+-- Получить вектор движения игрока
+function InputServer:get_movement_vector(player)
+
+    local x = 0
+    local y = 0
+
+    -- Ось X (горизонтальное движение)
+    if self.keyboard_control:is_player_button_pressed(player, OSKEY_A) then
+        x = x - 1  -- Движение влево
+    end
+    if self.keyboard_control:is_player_button_pressed(player, OSKEY_D) then
+        x = x + 1  -- Движение вправо
+    end
+
+    -- Ось Y (вертикальное движение)
+    if self.keyboard_control:is_player_button_pressed(player, OSKEY_W) then
+        y = y + 1  -- Движение вперёд
+    end
+    if self.keyboard_control:is_player_button_pressed(player, OSKEY_S) then
+        y = y - 1  -- Движение назад
+    end
+
+    return x, y
 end
 
+
+
+function InputServer:init()
+    self.keyboard_control = KeyboardController:init()
+    ControlAgent:init()
+    self.keyboard_control:add_key(OSKEY_W)
+    self.keyboard_control:add_key(OSKEY_A)
+    self.keyboard_control:add_key(OSKEY_S)
+    self.keyboard_control:add_key(OSKEY_D)
+    --NetFrame:init()
+end
+
+---@class KeyboardController
+KeyboardController = {}
+
+
+function KeyboardController.get_config()
+    local config = {}
+    config.hearing_keys = {
+        OSKEY_Q, OSKEY_W, OSKEY_E,
+        OSKEY_A, OSKEY_S, OSKEY_D
+    }
+    return config
+end
+
+
+---@param cls KeyboardController
+function KeyboardController.is_player_button_pressed(cls, player, os_key)
+    return cls.player_key[player][os_key]
+end
+
+
+function KeyboardController._on_keyboard_event()
+    local key_status = BlzGetTriggerPlayerIsKeyDown()
+    local os_key = BlzGetTriggerPlayerKey()
+    local player = GetTriggerPlayer()
+    KeyboardController.player_key[player][os_key] = key_status
+end
+
+---@param cls KeyboardController
+---@param os_key_type oskeytype
+function KeyboardController.add_key(cls, os_key_type)
+    for i = 1, bj_MAX_PLAYER_SLOTS do
+        local player = Player(i-1)
+        cls.player_key[player] = {}
+        BlzTriggerRegisterPlayerKeyEvent(cls.trigger_keypress, player, os_key_type, 0, true  )
+        BlzTriggerRegisterPlayerKeyEvent(cls.trigger_keypress, player, os_key_type, 0, false )
+    end
+end
+
+---@param cls KeyboardController
+---@return KeyboardController
+function KeyboardController.init(cls)
+    cls.init = function(_cls) return _cls end
+    cls.player_key = {}
+    cls.trigger_keypress = CreateTrigger()
+    TriggerAddAction(cls.trigger_keypress, cls._on_keyboard_event)
+    return cls
+end
+
+
+setmetatable(KeyboardController, {
+    __call = function(cls,...) return cls:init(...) end
+})
 ---@class NetFrame
 NetFrame = {}
 
@@ -2025,6 +2112,7 @@ do
     function ControlAgent.create(cls, unit, player)
         local obj = setmetatable({}, cls.__meta)
         obj.unit_handle = unit.unit_handle
+        obj.player = player
         PhysicSystem:add_physic_agent(obj)
         return obj
     end
@@ -2033,8 +2121,14 @@ do
         local unit_handle = self.unit_handle
         local x = GetUnitX(unit_handle)
         local y = GetUnitY(unit_handle)
-        SetUnitX(unit_handle, x + 0.1)
-        SetUnitY(unit_handle, y + 0.1)
+        local face_angle = GetUnitFacing(unit_handle)/180*math.pi
+        local input_x, input_y = InputServer:get_movement_vector(self.player)
+        local speed = 2
+        local dx = speed*input_y*math.cos(face_angle) + speed * input_x * math.sin(face_angle)
+        local dy = speed*input_y*math.sin(face_angle) - speed * input_x * math.cos(face_angle)
+
+        SetUnitX(unit_handle, x + dx)
+        SetUnitY(unit_handle, y + dy)
     end
 
     function ControlAgent.init(cls)
@@ -2185,7 +2279,6 @@ do
     ---@param cls Unit
     ---@return Unit
     function Unit.init(cls)
-        print("function Unit.init(cls)")
         cls.init = function(_cls) return _cls end
         cls.link = dict()
         cls.instance_recycler = MatrixRecycler()

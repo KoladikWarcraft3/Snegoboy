@@ -9,7 +9,9 @@ function map:main()
     Unit:init()
     PhysicSystem:init()
     local unit = Unit:create(Player(0),FourCC("hfoo"),0,0)
+    InputServer:init()
     local agent = ControlAgent:create(unit, Player(0))
+
     print("Initializing complite.")
 end
 

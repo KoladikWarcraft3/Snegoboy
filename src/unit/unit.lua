@@ -60,7 +60,6 @@ do
     ---@param cls Unit
     ---@return Unit
     function Unit.init(cls)
-        print("function Unit.init(cls)")
         cls.init = function(_cls) return _cls end
         cls.link = dict()
         cls.instance_recycler = MatrixRecycler()

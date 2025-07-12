@@ -9,6 +9,7 @@ do
     function ControlAgent.create(cls, unit, player)
         local obj = setmetatable({}, cls.__meta)
         obj.unit_handle = unit.unit_handle
+        obj.player = player
         PhysicSystem:add_physic_agent(obj)
         return obj
     end
@@ -17,8 +18,14 @@ do
         local unit_handle = self.unit_handle
         local x = GetUnitX(unit_handle)
         local y = GetUnitY(unit_handle)
-        SetUnitX(unit_handle, x + 0.1)
-        SetUnitY(unit_handle, y + 0.1)
+        local face_angle = GetUnitFacing(unit_handle)/180*math.pi
+        local input_x, input_y = InputServer:get_movement_vector(self.player)
+        local speed = 2
+        local dx = speed*input_y*math.cos(face_angle) + speed * input_x * math.sin(face_angle)
+        local dy = speed*input_y*math.sin(face_angle) - speed * input_x * math.cos(face_angle)
+
+        SetUnitX(unit_handle, x + dx)
+        SetUnitY(unit_handle, y + dy)
     end
 
     function ControlAgent.init(cls)
