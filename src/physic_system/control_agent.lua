@@ -22,7 +22,7 @@ do
         local y = GetUnitY(unit_handle)
         local angle = self.get_angle(unit_handle)/180*math.pi
         local input_x, input_y = InputServer:get_movement_vector(self.player)
-        local speed = 2
+        local speed = 5
         local dx = speed * input_y * math.cos(angle) + speed * input_x * math.sin(angle)
         local dy = speed * input_y * math.sin(angle) - speed * input_x * math.cos(angle)
         if dx ~= 0 and dy ~= 0 then

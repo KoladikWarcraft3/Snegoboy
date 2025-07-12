@@ -47,14 +47,16 @@ function CameraAgent.create(cls, unit, player)
     obj.rotation = 0
     obj.angle_of_attack = 355
     obj.yangle = 0
+    obj.sens_x = 10
+    obj.sens_y = 10
     CameraSetupSetField(obj.camera, CAMERA_FIELD_ANGLE_OF_ATTACK, obj.angle_of_attack, 0)
     CameraSetupSetField(obj.camera, CAMERA_FIELD_LOCAL_PITCH, 0, 0)
     CameraSetupSetField(obj.camera, CAMERA_FIELD_TARGET_DISTANCE, 400, 0)
     CameraSetupSetField(obj.camera, CAMERA_FIELD_ZOFFSET,150, 0)
     SetCameraTargetController(obj.unit_handle, 0, 0, false)
     TimerStart(CreateTimer(), 0.02, true, function()
-        local dx = 4*InputServer:get_mouse_x(obj.player)
-        local dy = 4*InputServer:get_mouse_y(obj.player)
+        local dx = obj.sens_x * InputServer:get_mouse_x(obj.player)
+        local dy = obj.sens_y * InputServer:get_mouse_y(obj.player)
         obj:add_rotation(dx)
         obj:add_angle_of_attack(dy)
         obj:apply()
