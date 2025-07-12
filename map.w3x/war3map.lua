@@ -1,28 +1,6 @@
 function InitGlobals()
 end
 
-function CreateUnitsForPlayer0()
-local p = Player(0)
-local u
-local unitID
-local t
-local life
-
-u = BlzCreateUnitWithSkin(p, FourCC("hfoo"), -569.0, 110.6, 110.987, FourCC("hfoo"))
-end
-
-function CreatePlayerBuildings()
-end
-
-function CreatePlayerUnits()
-CreateUnitsForPlayer0()
-end
-
-function CreateAllUnits()
-CreatePlayerBuildings()
-CreatePlayerUnits()
-end
-
 --CUSTOM_CODE
 ---@class CameraAgent
 CameraAgent = {}
@@ -65,7 +43,6 @@ end
 ---@param cls CameraAgent
 ---@param unit Unit
 function CameraAgent.create(cls, unit, player)
-    print("CameraAgent.create(cls, unit, player)")
     local obj = setmetatable({}, cls.__meta)
     obj.unit_handle = unit.unit_handle
     obj.camera = CreateCameraSetup()
@@ -102,7 +79,7 @@ map = {
 
 function map:main()
     print("Initializing map...")
-    -- InputServer:init()
+    InputServer:init()
     Unit:init()
     PhysicSystem:init()
     local unit = Unit:create(Player(0),FourCC("H000"),0,0)
@@ -111,6 +88,8 @@ function map:main()
     local agent = ControlAgent:create(unit, Player(0), function()
         return camera_agent.rotation
     end)
+    BlzHideOriginFrames( true )
+    --NetFrame:disable()
     print("Initializing complite.")
 end
 
@@ -120,7 +99,7 @@ local oldInitGlobals = InitGlobals
 function InitGlobals()
     oldInitGlobals()
     local initTimer = CreateTimer()
-    TimerStart(initTimer, 0.0, false, function()
+    TimerStart(initTimer, 0.1, false, function()
         DestroyTimer(initTimer)
         map:main() -- вызываем свою основную инициализацию
     end)
@@ -2118,6 +2097,7 @@ end
 function MouseMoveController.set_mouse_center()
     local x = math.floor(BlzGetLocalClientWidth()/2)
     local y = math.floor(BlzGetLocalClientHeight()/2)
+    BlzEnableCursor(false)
     BlzSetMousePos(x, y)
 end
 
@@ -2127,7 +2107,7 @@ function MouseMoveController.init(cls)
     cls.net_frame = NetFrame:init()
     cls.input_x = cls.net_frame.input_x
     cls.input_y = cls.net_frame.input_y
-    --TimerStart(CreateTimer(), 0.02, true, MouseMoveController.set_mouse_center)
+    TimerStart(CreateTimer(), 0.01, true, MouseMoveController.set_mouse_center)
     return cls
 end
 ---@class NetFrame
@@ -2139,6 +2119,7 @@ function NetFrame._frame_callback()
     local net_frame = NetFrame:get(frame_handle)
     NetFrame.input_x[GetPlayerId(player) + 1] = net_frame.x
     NetFrame.input_y[GetPlayerId(player) + 1] = net_frame.y
+    BlzEnableCursor(false)
 end
 
 ---@param cls NetFrame
@@ -2166,9 +2147,16 @@ function NetFrame.create_grid(cls)
     for i = -5, 5 do
         for j = -5, 5 do
             if not (i == 0 and j == 0) then
-                cls:create(i * cls.frame_height, j * cls.frame_width)
+                local frame = cls:create(i * cls.frame_height, j * cls.frame_width)
+                table.insert(cls.net, frame)
             end
         end
+    end
+end
+
+function NetFrame.disable(cls)
+    for _, frame in ipairs(cls.net) do
+        BlzFrameSetEnable(frame.frame, false)
     end
 end
 
@@ -2181,6 +2169,7 @@ function NetFrame.init(cls)
     cls.link = dict()
     cls.input_x = {}
     cls.input_y = {}
+    cls.net = {}
     cls:create_grid()
     TriggerAddAction( cls.frame_trig, cls._frame_callback)
     return cls
@@ -2412,7 +2401,6 @@ NewSoundEnvironment("Default")
 SetAmbientDaySound("LordaeronSummerDay")
 SetAmbientNightSound("LordaeronSummerNight")
 SetMapMusic("Music", true, 0)
-CreateAllUnits()
 InitBlizzard()
 InitGlobals()
 end

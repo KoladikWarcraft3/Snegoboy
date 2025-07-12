@@ -12,6 +12,7 @@ end
 function MouseMoveController.set_mouse_center()
     local x = math.floor(BlzGetLocalClientWidth()/2)
     local y = math.floor(BlzGetLocalClientHeight()/2)
+    --- BlzEnableCursor(false)
     BlzSetMousePos(x, y)
 end
 
@@ -21,6 +22,6 @@ function MouseMoveController.init(cls)
     cls.net_frame = NetFrame:init()
     cls.input_x = cls.net_frame.input_x
     cls.input_y = cls.net_frame.input_y
-    --TimerStart(CreateTimer(), 0.02, true, MouseMoveController.set_mouse_center)
+    TimerStart(CreateTimer(), 0.01, true, MouseMoveController.set_mouse_center)
     return cls
 end

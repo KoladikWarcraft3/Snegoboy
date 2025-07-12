@@ -39,7 +39,6 @@ end
 ---@param cls CameraAgent
 ---@param unit Unit
 function CameraAgent.create(cls, unit, player)
-    print("CameraAgent.create(cls, unit, player)")
     local obj = setmetatable({}, cls.__meta)
     obj.unit_handle = unit.unit_handle
     obj.camera = CreateCameraSetup()
