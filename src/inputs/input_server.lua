@@ -1,11 +1,11 @@
 InputServer = {}
 
-function InputServer:get_mouse_vx(player)
-    return NetFrame:get_input_x(player)
+function InputServer:get_mouse_x(player)
+    return self.mouse_move_control:get_input_x(player)
 end
 
-function InputServer:get_mouse_vy(player)
-    return NetFrame:get_input_y(player)
+function InputServer:get_mouse_y(player)
+    return self.mouse_move_control:get_input_y(player)
 end
 
 -- Получить вектор движения игрока
@@ -35,12 +35,14 @@ end
 
 
 
-function InputServer:init()
-    self.keyboard_control = KeyboardController:init()
+function InputServer.init(cls)
+    cls.init = function(_cls) return _cls end
+    cls.keyboard_control = KeyboardController:init()
+    cls.mouse_move_control = MouseMoveController:init()
     ControlAgent:init()
-    self.keyboard_control:add_key(OSKEY_W)
-    self.keyboard_control:add_key(OSKEY_A)
-    self.keyboard_control:add_key(OSKEY_S)
-    self.keyboard_control:add_key(OSKEY_D)
-    --NetFrame:init()
+    cls.keyboard_control:add_key(OSKEY_W)
+    cls.keyboard_control:add_key(OSKEY_A)
+    cls.keyboard_control:add_key(OSKEY_S)
+    cls.keyboard_control:add_key(OSKEY_D)
+    return cls
 end

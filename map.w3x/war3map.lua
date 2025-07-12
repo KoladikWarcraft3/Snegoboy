@@ -24,6 +24,41 @@ CreatePlayerUnits()
 end
 
 --CUSTOM_CODE
+---@class CameraAgent
+CameraAgent = {}
+CameraAgent.__meta = { __index = CameraAgent }
+CameraAgent.debug = false
+
+function CameraAgent:apply()
+    if (GetLocalPlayer() == self.player) then
+        CameraSetupApplyForceDuration(self.camera, false, 0)
+    end
+end
+
+---@param cls CameraAgent
+---@param unit Unit
+function CameraAgent.create(cls, unit, player)
+    local obj = setmetatable({}, cls.__meta)
+    obj.unit_handle = unit.unit_handle
+    obj.camera = CreateCameraSetup()
+    obj.player = player
+    CameraSetupSetField(obj.camera, CAMERA_FIELD_ANGLE_OF_ATTACK, 355, 0)
+    CameraSetupSetField(obj.camera, CAMERA_FIELD_LOCAL_PITCH, 0, 0)
+    CameraSetupSetField(obj.camera, CAMERA_FIELD_TARGET_DISTANCE, 1000, 0)
+    SetCameraTargetController(obj.unit_handle, 0, 0, false)
+    TimerStart(CreateTimer(), 0.02, true, function()
+        local facing = GetUnitFacing(obj.unit_handle)
+        CameraSetupSetField(obj.camera, CAMERA_FIELD_ROTATION, facing, 0)
+        obj:apply()
+    end)
+
+    return obj
+end
+
+---@param cls CameraAgent
+function CameraAgent.init(cls)
+
+end
 map = {
     debug = true
 }
@@ -34,10 +69,10 @@ function map:main()
     -- InputServer:init()
     Unit:init()
     PhysicSystem:init()
-    local unit = Unit:create(Player(0),FourCC("hfoo"),0,0)
+    local unit = Unit:create(Player(0),FourCC("H000"),0,0)
     InputServer:init()
     local agent = ControlAgent:create(unit, Player(0))
-
+    local agent = CameraAgent:create(unit, Player(0))
     print("Initializing complite.")
 end
 
@@ -1932,12 +1967,12 @@ end
 
 InputServer = {}
 
-function InputServer:get_mouse_vx(player)
-    return NetFrame:get_input_x(player)
+function InputServer:get_mouse_x(player)
+    return self.mouse_move_control:get_input_x(player)
 end
 
-function InputServer:get_mouse_vy(player)
-    return NetFrame:get_input_y(player)
+function InputServer:get_mouse_y(player)
+    return self.mouse_move_control:get_input_y(player)
 end
 
 -- Получить вектор движения игрока
@@ -1967,14 +2002,16 @@ end
 
 
 
-function InputServer:init()
-    self.keyboard_control = KeyboardController:init()
+function InputServer.init(cls)
+    cls.init = function(_cls) return _cls end
+    cls.keyboard_control = KeyboardController:init()
+    cls.mouse_move_control = MouseMoveController:init()
     ControlAgent:init()
-    self.keyboard_control:add_key(OSKEY_W)
-    self.keyboard_control:add_key(OSKEY_A)
-    self.keyboard_control:add_key(OSKEY_S)
-    self.keyboard_control:add_key(OSKEY_D)
-    --NetFrame:init()
+    cls.keyboard_control:add_key(OSKEY_W)
+    cls.keyboard_control:add_key(OSKEY_A)
+    cls.keyboard_control:add_key(OSKEY_S)
+    cls.keyboard_control:add_key(OSKEY_D)
+    return cls
 end
 
 ---@class KeyboardController
@@ -2029,6 +2066,33 @@ end
 setmetatable(KeyboardController, {
     __call = function(cls,...) return cls:init(...) end
 })
+---@class MouseMoveController
+MouseMoveController = {}
+
+function MouseMoveController.get_input_x(cls, player)
+    return cls.input_x[GetPlayerId(player) + 1] or 0
+end
+
+function MouseMoveController.get_input_y(cls, player)
+    return cls.input_y[GetPlayerId(player) + 1] or 0
+end
+
+function MouseMoveController.set_mouse_center()
+    local x = math.floor(BlzGetLocalClientWidth()/2)
+    local y = math.floor(BlzGetLocalClientHeight()/2)
+    BlzSetMousePos(x, y)
+end
+
+---@param cls MouseMoveController
+function MouseMoveController.init(cls)
+    cls.init = function(_cls) return _cls end
+    print(1)
+    cls.net_frame = NetFrame:init()
+    cls.input_x = cls.net_frame.input_x
+    cls.input_y = cls.net_frame.input_y
+    --TimerStart(CreateTimer(), 0.02, true, MouseMoveController.set_mouse_center)
+    return cls
+end
 ---@class NetFrame
 NetFrame = {}
 
@@ -2036,23 +2100,14 @@ function NetFrame._frame_callback()
     local frame_handle = BlzGetTriggerFrame()
     local player = GetTriggerPlayer()
     local net_frame = NetFrame:get(frame_handle)
-    --print("x:", net_frame.x, "y:", net_frame.y)
-    --NetFrame.set_mouse_center()
-    NetFrame.input_x[GetPlayerId(player) + 1] = net_frame.x
-    NetFrame.input_y[GetPlayerId(player) + 1] = net_frame.y
-end
-
-function NetFrame.set_mouse_center()
-    local x = math.floor(BlzGetLocalClientWidth()/2)
-    local y = math.floor(BlzGetLocalClientHeight()/2)
-    BlzSetMousePos(x, y)
+    --NetFrame.input_x[GetPlayerId(player) + 1] = net_frame.x
+    --NetFrame.input_y[GetPlayerId(player) + 1] = net_frame.y
 end
 
 ---@param cls NetFrame
 function NetFrame.create(cls, x ,y)
-    --local parent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
-    local parent = BlzGetFrameByName("ConsoleUIBackdrop", 0)
     local obj = {}
+    local parent = BlzGetFrameByName("ConsoleUIBackdrop", 0)
     obj.frame = BlzCreateFrameByType("SCROLLBAR", "FrameGridBoss", parent,"",0)
     obj.x = x
     obj.y = y
@@ -2071,8 +2126,8 @@ end
 
 ---@param cls NetFrame
 function NetFrame.create_grid(cls)
-    for i = -10, 10 do
-        for j = -10, 10 do
+    for i = -5, 5 do
+        for j = -5, 5 do
             if not (i == 0 and j == 0) then
                 cls:create(i * cls.frame_height, j * cls.frame_width)
             end
@@ -2080,26 +2135,18 @@ function NetFrame.create_grid(cls)
     end
 end
 
-function NetFrame.get_input_x(cls, player)
-    return cls.input_x[GetPlayerId(player) + 1] or 0
-end
-
-function NetFrame.get_input_y(cls, player)
-    return cls.input_y[GetPlayerId(player) + 1] or 0
-end
-
 ---@param cls NetFrame
 function NetFrame.init(cls)
+    cls.init = function(_cls) return _cls end
     cls.frame_width = 0.05
     cls.frame_height = 0.05
-    cls.timer_mouse_center = CreateTimer()
     cls.frame_trig = CreateTrigger()
     cls.link = dict()
     cls.input_x = {}
     cls.input_y = {}
-    TriggerAddAction( cls.frame_trig, cls._frame_callback)
     cls:create_grid()
-    -- TimerStart(cls.timer_mouse_center, 0.1, true, cls.set_mouse_center)
+    TriggerAddAction( cls.frame_trig, cls._frame_callback)
+    return cls
 end
 do
     ---@class ControlAgent

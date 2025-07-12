@@ -8,10 +8,10 @@ function map:main()
     -- InputServer:init()
     Unit:init()
     PhysicSystem:init()
-    local unit = Unit:create(Player(0),FourCC("hfoo"),0,0)
+    local unit = Unit:create(Player(0),FourCC("H000"),0,0)
     InputServer:init()
     local agent = ControlAgent:create(unit, Player(0))
-
+    local agent = CameraAgent:create(unit, Player(0))
     print("Initializing complite.")
 end
 
