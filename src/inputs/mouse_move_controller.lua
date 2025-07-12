@@ -18,7 +18,6 @@ end
 ---@param cls MouseMoveController
 function MouseMoveController.init(cls)
     cls.init = function(_cls) return _cls end
-    print(1)
     cls.net_frame = NetFrame:init()
     cls.input_x = cls.net_frame.input_x
     cls.input_y = cls.net_frame.input_y

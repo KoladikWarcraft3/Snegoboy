@@ -21,11 +21,9 @@ do
         local face_angle = GetUnitFacing(unit_handle)/180*math.pi
         local input_x, input_y = InputServer:get_movement_vector(self.player)
         local speed = 2
-        local dx = speed*input_y*math.cos(face_angle) + speed * input_x * math.sin(face_angle)
-        local dy = speed*input_y*math.sin(face_angle) - speed * input_x * math.cos(face_angle)
-
-        SetUnitX(unit_handle, x + dx)
-        SetUnitY(unit_handle, y + dy)
+        local dx = speed * input_y * math.cos(face_angle) + speed * input_x * math.sin(face_angle)
+        local dy = speed * input_y * math.sin(face_angle) - speed * input_x * math.cos(face_angle)
+        SetUnitPosition(unit_handle, x + dx, y + dy)
     end
 
     function ControlAgent.init(cls)
