@@ -15,6 +15,7 @@ function map:main()
         return camera_agent.rotation
     end)
     BlzHideOriginFrames( true )
+    BlzEnableCursor(false)
     --NetFrame:disable()
     print("Initializing complite.")
 end
